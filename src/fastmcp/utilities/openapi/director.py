@@ -1,5 +1,6 @@
 """Request director using openapi-core for stateless HTTP request building."""
 
+import json
 from typing import Any
 from urllib.parse import urljoin
 
@@ -55,7 +56,9 @@ class RequestDirector:
 
         # Step 3: Prepare request data
         method: str = route.method.upper()
-        params = query_params if query_params else None
+        params = (
+            self._serialize_query_params(query_params) if query_params else None
+        )
         headers = header_params if header_params else None
         json_body: dict[str, Any] | list[Any] | None = None
         content: str | bytes | None = None
@@ -208,6 +211,17 @@ class RequestDirector:
 
         # Combine with base URL
         return urljoin(base_url.rstrip("/") + "/", url_path.lstrip("/"))
+
+    def _serialize_query_params(
+        self, query_params: dict[str, Any]
+    ) -> dict[str, Any]:
+        serialized = {}
+        for key, value in query_params.items():
+            if isinstance(value, dict | list):
+                serialized[key] = json.dumps(value)
+            else:
+                serialized[key] = value
+        return serialized
 
 
 # Export public symbols
